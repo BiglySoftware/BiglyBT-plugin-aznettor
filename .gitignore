@@ -5,3 +5,9 @@
 /osx32/
 /osx64/
 /BiglyBTTor.exe
+*.class
+*.jar
+*.zip
+*.bak
+*.biglybt
+*.DS_Store
