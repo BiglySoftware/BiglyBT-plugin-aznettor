@@ -3469,7 +3469,7 @@ TorPlugin
 		{
 			long now = SystemTime.getMonotonousTime();
 			
-			boolean ok = consec_fails < 3;
+			boolean ok = consec_fails < 5;
 			
 			if ( !ok ){
 				
