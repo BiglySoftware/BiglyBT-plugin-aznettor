@@ -44,8 +44,11 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 
 import com.biglybt.core.security.SEPasswordListener;
 import com.biglybt.core.security.SESecurityManager;
@@ -70,7 +73,6 @@ import org.parg.azureus.plugins.networks.tor.TorPluginUI.PromptResponse;
 
 import com.biglybt.core.proxy.*;
 import com.biglybt.core.proxy.socks.*;
-import com.biglybt.core.util.GeneralUtils;
 import com.biglybt.ui.UIFunctions;
 import com.biglybt.ui.UIFunctionsManager;
 
@@ -391,6 +393,21 @@ TorPlugin
 										con.setReadTimeout( 30*1000 );
 									
 										con.setRequestProperty( "HOST", rewrite_host + (original_url.getPort()==-1?"":(":" + original_url.getPort())));
+										
+										if ( con instanceof HttpsURLConnection ){
+										
+											UrlUtils.HTTPSURLConnectionSNIHack( rewrite_host, (HttpsURLConnection)con );
+											
+											TrustManager[] tms_delegate = SESecurityManager.getAllTrustingTrustManager();
+
+											SSLContext sc = SSLContext.getInstance("SSL");
+
+											sc.init( null, tms_delegate, RandomUtils.SECURE_RANDOM );
+
+											SSLSocketFactory factory = sc.getSocketFactory();
+
+											((HttpsURLConnection)con).setSSLSocketFactory(factory);
+										}
 										
 										con.getResponseCode();
 										
