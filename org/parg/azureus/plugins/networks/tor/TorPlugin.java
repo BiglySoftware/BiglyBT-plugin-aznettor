@@ -1952,7 +1952,7 @@ TorPlugin
 			
 			if ( prompt_on_use ){
 	
-				if ( prompt_skip_vuze && Constants.isAzureusDomain( host )){
+				if ( prompt_skip_vuze && Constants.isAppDomain( host )){
 				
 					return( 0 );
 					
@@ -3166,7 +3166,7 @@ TorPlugin
 				
 				Mac mac = Mac.getInstance("HmacSHA256");
 				
-				SecretKeySpec secret_key = new SecretKeySpec( "Tor safe cookie authentication server-to-controller hash".getBytes(Constants.BYTE_ENCODING), "HmacSHA256");
+				SecretKeySpec secret_key = new SecretKeySpec( "Tor safe cookie authentication server-to-controller hash".getBytes(Constants.BYTE_ENCODING_CHARSET), "HmacSHA256");
 				
 				mac.init( secret_key );
 				
@@ -3181,7 +3181,7 @@ TorPlugin
 					throw( new Exception( "AUTHCHALLENGE response server hash incorrect" ));
 				}
 											
-				secret_key = new SecretKeySpec( "Tor safe cookie authentication controller-to-server hash".getBytes(Constants.BYTE_ENCODING), "HmacSHA256");
+				secret_key = new SecretKeySpec( "Tor safe cookie authentication controller-to-server hash".getBytes(Constants.BYTE_ENCODING_CHARSET), "HmacSHA256");
 
 				mac.init( secret_key );
 				
@@ -3346,7 +3346,7 @@ TorPlugin
 			throws IOException 
 		{
 			try{
-				os.write( ( str + "\r\n" ).getBytes(Constants.BYTE_ENCODING));
+				os.write( ( str + "\r\n" ).getBytes(Constants.BYTE_ENCODING_CHARSET));
 			
 				os.flush();
 				
