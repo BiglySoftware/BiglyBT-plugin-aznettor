@@ -2873,9 +2873,22 @@ TorPlugin
 		
 		String FS = File.separator;
 		
+		String bind_ip;
+		
+		String	bind_option = (String)server_options.get( "bind" );
+
+		if ( bind_option != null ){
+			
+			bind_ip = bind_option;
+			
+		}else{
+			
+			bind_ip = "127.0.0.1";
+		}
+		
 		String[] required_lines = { 
 			"HiddenServiceDir ." + FS + "services" + FS + server_id,
-			"HiddenServicePort 80 127.0.0.1:" + target_port
+			"HiddenServicePort 80 " + bind_ip + ":" + target_port
 		};
 		
 		boolean	config_ok = false;
