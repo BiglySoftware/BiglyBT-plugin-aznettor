@@ -354,7 +354,7 @@ TorPlugin
 							{
 								List<String>	lines = new ArrayList<String>();
 								
-								lines.add( "Testing connection via SOCKS proxy on port " + active_socks_port );
+								lines.add( "Testing connection via SOCKS proxy on " + active_socks_host + ":" + active_socks_port );
 								
 								try{
 									if ( !external_tor ){
@@ -674,8 +674,8 @@ TorPlugin
 							
 							if ( external_tor ){
 								
-								active_socks_host	= ext_socks_host_param.getValue();
-								active_socks_port 	= ext_socks_port_param.getValue();
+								active_socks_host	= external_socks_host 	= ext_socks_host_param.getValue();
+								active_socks_port 	= external_socks_port	= ext_socks_port_param.getValue();
 								
 							}else{
 								
