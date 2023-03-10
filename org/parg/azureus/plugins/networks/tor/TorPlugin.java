@@ -2867,15 +2867,19 @@ TorPlugin
 	{
 		String	server_id = (String)server_options.get( "id" );
 		
-		int		target_port = (Integer)server_options.get( "port" );
+		int		target_port = (Integer)server_options.get( AEProxyFactory.SP_PORT );
 
+		Integer remote_port = (Integer)server_options.get( "remote-port" /*AEProxyFactory.SP_REMOTE_PORT*/ );
+		
+		int port = remote_port==null?80:remote_port;
+		
 		File service_file = new File( services_dir, server_id + ".txt" );
 		
 		String FS = File.separator;
 		
 		String bind_ip;
 		
-		String	bind_option = (String)server_options.get( "bind" );
+		String	bind_option = (String)server_options.get( AEProxyFactory.SP_BIND );
 
 		if ( bind_option != null ){
 			
@@ -2888,7 +2892,7 @@ TorPlugin
 		
 		String[] required_lines = { 
 			"HiddenServiceDir ." + FS + "services" + FS + server_id,
-			"HiddenServicePort 80 " + bind_ip + ":" + target_port
+			"HiddenServicePort " + port + " " + bind_ip + ":" + target_port
 		};
 		
 		boolean	config_ok = false;
