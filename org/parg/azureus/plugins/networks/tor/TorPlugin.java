@@ -287,7 +287,7 @@ TorPlugin
 			
 			internal_socks_port = socks_port_param.getValue();
 			
-			services_enable_param 						= config_model.addBooleanParameter2( "services_enable", "aztorplugin.services.enable", false );
+			services_enable_param 						= config_model.addBooleanParameter2( "services_enable", "aztorplugin.services.enable", true );
 			
 			services_enable_param.addListener(
 				new ParameterListener()
@@ -975,6 +975,7 @@ TorPlugin
 		required_config_lines.add( "ControlPort 127.0.0.1:" + internal_control_port );
 		required_config_lines.add( "CookieAuthentication 1" );
 		required_config_lines.add( "DataDirectory ." + File.separator + data_dir.getName());
+		// required_config_lines.add( "log info stdout" );
 		
 		LinkedHashSet<String>	required_hs		= new LinkedHashSet<String>();
 
@@ -984,12 +985,21 @@ TorPlugin
 			
 			if ( files != null ){
 				
+				int hs_index = 0;
+				
 				for ( File f: files ){
 					
 					if ( f.getName().endsWith( ".txt" )){
 						
+						hs_index++;
+						
 						try{
-							required_hs.addAll( readFileAsStrings( f ));
+							List<String> hs_lines = readFileAsStrings( f );
+							
+							for ( String l: hs_lines ){
+							
+								required_hs.add( l + " # " + hs_index );
+							}
 							
 						}catch( Throwable e ){
 						}
