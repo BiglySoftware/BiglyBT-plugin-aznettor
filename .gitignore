@@ -4,6 +4,9 @@
 /linux64/
 /osx32/
 /osx64/
+/osx64aarch/
+/win32/
+/win64/
 /BiglyBTTor.exe
 *.class
 *.jar
@@ -12,3 +15,5 @@
 *.biglybt
 *.DS_Store
 /*.dll
+/geoip6
+/geoip

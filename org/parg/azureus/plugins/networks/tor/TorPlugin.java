@@ -56,6 +56,7 @@ import com.biglybt.core.tracker.protocol.PRHelpers;
 import com.biglybt.core.util.*;
 import com.biglybt.pif.PluginAdapter;
 import com.biglybt.pif.PluginConfig;
+import com.biglybt.pif.PluginException;
 import com.biglybt.pif.PluginInterface;
 import com.biglybt.pif.UnloadablePlugin;
 import com.biglybt.pif.ipc.IPCException;
@@ -789,42 +790,58 @@ TorPlugin
 			// This issue came to light on Linux where the bundled plugins are installed into the
 			// shared plugin location...
 			
+			if ( !plugin_install_dir.canWrite()){
+				
+				throw( new PluginException( "Tor Helper plugin must be installed as a per-user plugin with a writeable install location" ));
+			}
+			
 			config_file = new File( plugin_install_dir, "config.txt" );
 			
 			plugin_dir 	= config_file.getParentFile();
-			
-				// hack for linux and OSX - currently bundle both 32+64 bit versions into one plugin and then
-				// copy the required files into place...
-			
-			if ( Constants.isLinux || Constants.isOSX ){
-				
-				File	arch_dir;
-				
-				if ( Constants.isLinux ){
 					
-					arch_dir = new File( plugin_dir, Constants.is64Bit?"linux64":"linux32" );
+				// copy files into place
+			
+			File	arch_dir;
+			
+			if ( Constants.isLinux ){
+				
+				arch_dir = new File( plugin_dir, Constants.is64Bit?"linux64":"linux32" );
+				
+			}else if ( Constants.isOSX ){
+				
+				String sub_dir;
+				
+				if ( Constants.is64Bit ){
+					
+					sub_dir = Constants.isArm?"osx64aarch":"osx64";
 					
 				}else{
 					
-					arch_dir = new File( plugin_dir, Constants.is64Bit?"osx64":"osx32" );
+					sub_dir = "osx32";
 				}
 				
-				File[] files = arch_dir.listFiles();
+				arch_dir = new File( plugin_dir, sub_dir );
 				
-				if ( files != null ){
+			}else{
+				
+				arch_dir = new File( plugin_dir, Constants.is64Bit?"win64":"win32" );
+			}
+			
+			File[] files = arch_dir.listFiles();
+			
+			if ( files != null ){
+				
+				for ( File f: files ){
 					
-					for ( File f: files ){
+						// +x permissions will be fixed up later
+					
+					File target = new File( plugin_dir, f.getName());
+					
+					if ( !FileUtil.copyFile( f, target )){
 						
-							// +x permissions will be fixed up later
+							// continue, maybe things will work out
 						
-						File target = new File( plugin_dir, f.getName());
-						
-						if ( !FileUtil.copyFile( f, target )){
-							
-								// continue, maybe things will work out
-							
-							Debug.out( "Failed to copy file from " + f + " to " + target );
-						}
+						Debug.out( "Failed to copy file from " + f + " to " + target );
 					}
 				}
 			}
@@ -975,6 +992,9 @@ TorPlugin
 		required_config_lines.add( "ControlPort 127.0.0.1:" + internal_control_port );
 		required_config_lines.add( "CookieAuthentication 1" );
 		required_config_lines.add( "DataDirectory ." + File.separator + data_dir.getName());
+		required_config_lines.add( "GeoIPFile ." + File.separator + "geoip" );
+		required_config_lines.add( "GeoIPv6File ." + File.separator + "geoip6" );
+				
 		// required_config_lines.add( "log info stdout" );
 		
 		LinkedHashSet<String>	required_hs		= new LinkedHashSet<String>();
