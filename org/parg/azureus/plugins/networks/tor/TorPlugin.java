@@ -2939,7 +2939,9 @@ TorPlugin
 			}
 		}
 		
-		final File host_file = new File( services_dir, server_id + FS + "hostname" );
+		File service_dir = new File( services_dir, server_id );
+		
+		File host_file = new File( service_dir, "hostname" );
 
 		String	host_name = null;
 		
@@ -3077,7 +3079,46 @@ TorPlugin
 		
 		reply.put( "host", host_name );
 		
+		try{
+			reply.put( "pk", extractPublicKey( service_dir ));
+			
+			reply.put( "sk", extractSecretKey( service_dir ));
+			
+		}catch( Throwable e ){
+			
+		}
+		
 		return( reply );
+	}
+	
+	public byte[]
+	extractPublicKey(
+		File		dir )
+	
+		throws Exception
+	{
+			// public and private keys can be derived from secret key (which is 64 byte SHA512 hash of
+			// the seed used when creating the key pair) - check out the code that
+			// recreates the PublicKey and PrivateKey instances in using the secret key elsewhere 
+		
+		File file = new File( dir, "hs_ed25519_public_key" );
+		
+		byte[] bytes = FileUtil.readFileAsByteArray(file);
+		
+		return( Arrays.copyOfRange( bytes, bytes.length-32, bytes.length ));
+	}
+	
+	public byte[]
+	extractSecretKey(
+		File		dir )
+	
+		throws Exception
+	{
+		File file = new File( dir, "hs_ed25519_secret_key" );
+		
+		byte[] bytes = FileUtil.readFileAsByteArray(file);
+		
+		return( Arrays.copyOfRange( bytes, bytes.length-64, bytes.length ));
 	}
 	
 	private List<String>
