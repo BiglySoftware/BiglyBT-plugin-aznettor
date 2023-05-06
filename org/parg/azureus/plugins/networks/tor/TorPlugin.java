@@ -1288,7 +1288,7 @@ TorPlugin
 				{
 					if ( proxy_request_count.get() > 0 || http_proxy_map.size() > 0 ){
 						
-						String stats = "Requests=" + proxy_request_count.get() + ", ok=" + proxy_request_ok.get() + ", failed=" + proxy_request_failed.get();
+						String stats = "Proxy requests=" + proxy_request_count.get() + ", ok=" + proxy_request_ok.get() + ", failed=" + proxy_request_failed.get();
 						
 						List<TorPluginHTTPProxy>	proxies;
 						
@@ -2897,6 +2897,11 @@ TorPlugin
 	{
 		String	server_id = (String)server_options.get( "id" );
 		
+		if ( server_id.contains( ".." )){
+			
+			throw( new IPCException( "Invalid server id" ));
+		}
+		
 		int		target_port = (Integer)server_options.get( AEProxyFactory.SP_PORT );
 
 		Integer remote_port = (Integer)server_options.get( "remote-port" /*AEProxyFactory.SP_REMOTE_PORT*/ );
@@ -2920,6 +2925,10 @@ TorPlugin
 			bind_ip = "127.0.0.1";
 		}
 		
+		Boolean b_new_keys = (Boolean)server_options.get( "new-identity" /*AEProxyFactory.SP_NEW_IDENTITY*/ );
+		
+		boolean new_keys = b_new_keys != null && b_new_keys;
+		
 		String[] required_lines = { 
 			"HiddenServiceDir ." + FS + "services" + FS + server_id,
 			"HiddenServicePort " + port + " " + bind_ip + ":" + target_port
@@ -2940,6 +2949,11 @@ TorPlugin
 		}
 		
 		File service_dir = new File( services_dir, server_id );
+		
+		if ( new_keys ){
+			
+			FileUtil.recursiveDeleteNoCheck( service_dir );
+		}
 		
 		File host_file = new File( service_dir, "hostname" );
 
@@ -3554,6 +3568,8 @@ TorPlugin
 	private class
 	ProxyHistory
 	{
+		private final int DELAY_AFTER_FAILS = 5;
+		
 		private String	host;
 		
 		private long	last_connect_time;
@@ -3574,19 +3590,19 @@ TorPlugin
 		{
 			long now = SystemTime.getMonotonousTime();
 			
-			boolean ok = consec_fails < 5;
+			boolean ok = consec_fails < DELAY_AFTER_FAILS;
 			
 			if ( !ok ){
 				
-				int delay = 30*60*1000;
+				int delay = 0;
 				
-				for ( int i=3;i<consec_fails;i++){
+				for ( int i=4;i<consec_fails;i++){
 					
-					delay <<= 1;
+					delay += 30*1000;
 					
-					if ( delay > 24*60*60*1000 ){
+					if ( delay > 15*60*1000 ){
 						
-						delay = 24*60*60*1000;
+						delay = 15*60*1000;
 						
 						break;
 					}
@@ -3622,7 +3638,7 @@ TorPlugin
 				
 				consec_fails++;
 				
-				if ( consec_fails > 2 ){
+				if ( consec_fails >= DELAY_AFTER_FAILS ){
 					
 					log( "Failed to connect to '" + host + "' " + consec_fails + " times in a row - backing off (ok=" + total_ok + ", fails=" + total_fails +")" );
 				}
