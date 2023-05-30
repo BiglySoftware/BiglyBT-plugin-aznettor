@@ -79,7 +79,7 @@ import com.biglybt.ui.UIFunctionsManager;
 
 public class 
 TorPlugin
-	implements UnloadablePlugin
+	implements UnloadablePlugin, SystemTime.ChangeListener
 {
 	private static final String		BROWSER_PLUGIN_ID = "aznettorbrowser";
 	
@@ -875,6 +875,8 @@ TorPlugin
 						
 						init_sem.releaseForever();
 						
+						SystemTime.registerClockChangeListener( TorPlugin.this );
+						
 						if ( plugin_enabled ){
 							
 							init();
@@ -886,6 +888,8 @@ TorPlugin
 					closedownInitiated()
 					{
 						init_sem.releaseForever();
+						
+						SystemTime.unregisterClockChangeListener( TorPlugin.this );
 						
 						synchronized( TorPlugin.this ){
 							
@@ -1809,6 +1813,43 @@ TorPlugin
 		}
 	}
 	
+	public void 
+	clockChangeDetected(
+		long current_time, 
+		long change_millis )
+	{
+		
+	}
+
+	public void 
+	clockChangeCompleted(
+		long current_time, 
+		long change_millis )
+	{
+		if ( Math.abs(change_millis) > 60*1000 ){
+			
+			AEThread2.createAndStartDaemon( "Tor restart", ()->{
+				
+				boolean closed = false;
+				
+				synchronized( TorPlugin.this ){
+				
+					if ( current_connection != null ){
+											
+						closeConnection( "Large clock change (" + change_millis + ")" );
+						
+						closed = true;
+					}
+				}
+				
+				if ( closed ){
+					
+					getConnection( 10*1000, true );
+				}
+			});
+		}
+	}
+	
 	private void
 	log(
 		String		str )
@@ -2558,6 +2599,42 @@ TorPlugin
 		}
 		
 		return( active );
+	}
+	
+	/**
+	 * @since 1.3.4
+	 * @throws IPCException
+	 */
+	
+	public void
+	requestRestart()
+	
+		throws IPCException
+	{
+		if ( external_tor ){
+			
+			throw( new IPCException( "External Tor, can't restart" ));
+		}
+		
+		AEThread2.createAndStartDaemon( "Tor restart", ()->{
+			
+			boolean closed = false;
+			
+			synchronized( TorPlugin.this ){
+			
+				if ( current_connection != null ){
+										
+					closeConnection( "Restart requested" );
+					
+					closed = true;
+				}
+			}
+			
+			if ( closed ){
+				
+				getConnection( 10*1000, true );
+			}
+		});
 	}
 	
 	public void
