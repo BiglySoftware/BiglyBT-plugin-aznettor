@@ -2290,11 +2290,11 @@ TorPlugin
 			
 			if ( host.equals( "version.biglybt.com" )){
 				
-				return( "7zq2rhfhvgcv7pkt.onion" );
+				return( "yh6p7w5v4puo36vumdjabo4lggit4n6iua5l7eyonyhexg4lkj2n6yad.onion" );
 				
 			}else if ( host.equals( "plugins.biglybt.com" )){
 	
-				return( "ezhdqq3jjpsqg65l.onion" );
+				return( "xp5qetgwtj6w62sutz2xnjpx2l7j4z56mbt7xr7wmejerbg67g7nwfyd.onion" );
 			}
 		}
 					
