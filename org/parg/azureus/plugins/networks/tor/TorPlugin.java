@@ -2293,8 +2293,12 @@ TorPlugin
 				return( "yh6p7w5v4puo36vumdjabo4lggit4n6iua5l7eyonyhexg4lkj2n6yad.onion" );
 				
 			}else if ( host.equals( "plugins.biglybt.com" )){
-	
+				
 				return( "xp5qetgwtj6w62sutz2xnjpx2l7j4z56mbt7xr7wmejerbg67g7nwfyd.onion" );
+				
+			}else if ( host.equals( "i2pboot.biglybt.com" )){
+				
+				return( "547reb67onr5bq2zb4n77qtrk2gzyskeln23qyx7m4v76splsohuhvad.onion" );
 			}
 		}
 					
