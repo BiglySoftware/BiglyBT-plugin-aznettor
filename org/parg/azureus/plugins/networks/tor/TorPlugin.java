@@ -155,6 +155,18 @@ TorPlugin
 	private Map<Proxy,ProxyMapEntry>			proxy_map 				= new IdentityHashMap<Proxy, ProxyMapEntry>();
 	private Map<String,Object[]>				intermediate_host_map	= new HashMap<String, Object[]>();
 	
+	protected Map<String,Object[]>	intermediate_host_old_map =
+			new LinkedHashMap<String,Object[]>(256,0.75f,true)
+			{
+				@Override
+				protected boolean
+				removeEldestEntry(
+			   		Map.Entry<String,Object[]> eldest)
+				{
+					return size() > 256;
+				}
+			};
+			
 	private Map<String,String>					domain_rewrite_map	= new HashMap<String, String>();
 	
 	private Map<String,TorPluginHTTPProxy>		http_proxy_map		= new HashMap<String, TorPluginHTTPProxy>();
@@ -357,6 +369,9 @@ TorPlugin
 								
 								lines.add( "Testing connection via SOCKS proxy on " + active_socks_host + ":" + active_socks_port );
 								
+								String	temp_host		= "";
+								String	rewrite_host	= "";
+								
 								try{
 									if ( !external_tor ){
 										
@@ -378,8 +393,9 @@ TorPlugin
 									}
 									
 									Proxy 	proxy 			= (Proxy)proxy_details[0];
-									String	temp_host		= (String)proxy_details[1];
-									String	rewrite_host	= (String)proxy_details[2];
+									
+									temp_host		= (String)proxy_details[1];
+									rewrite_host	= (String)proxy_details[2];
 									
 									boolean	ok = false;
 									
@@ -421,7 +437,7 @@ TorPlugin
 											String text = FileUtil.readInputStreamAsString( is, 1024 );
 											
 											lines.add( "Start of response: " );
-											lines.add( text );
+											lines.add( text.replaceAll(temp_host, rewrite_host));
 											
 											ok = true;
 																		
@@ -439,7 +455,7 @@ TorPlugin
 									}
 								}catch( Throwable e ){
 									
-									lines.add( "Test failed: " + Debug.getNestedExceptionMessage( e ));
+									lines.add( "Test failed: " + Debug.getNestedExceptionMessage( e ).replaceAll(temp_host, rewrite_host));
 	
 								}finally{
 									
@@ -1386,7 +1402,7 @@ TorPlugin
 							
 							it.remove();
 							
-							Debug.out( "Removed orphaned proxy entry for " + entry.getHost());
+							Debug.out( "Removed orphaned proxy entry for " + entry.getHost() + ", " + entry.getCreator());
 						}
 					}
 				}
@@ -2409,6 +2425,8 @@ TorPlugin
 			String 	intermediate_host;
 			int		intermediate_port;
 	
+			long now =  SystemTime.getMonotonousTime() ;
+
 			synchronized( this ){
 				
 				if ( socks_proxy == null ){
@@ -2435,9 +2453,31 @@ TorPlugin
 									
 					intermediate_host = PRHelpers.intToAddress( address );
 					
-					if ( !intermediate_host_map.containsKey( intermediate_host )){
+					if ( !intermediate_host_map.containsKey( intermediate_host )){						
 						
-						intermediate_host_map.put( intermediate_host, new Object[]{ host, socks_host, socks_port });
+						Object[] entry = new Object[]{ host, socks_host, socks_port, now };
+						
+						intermediate_host_map.put( intermediate_host, entry );
+						
+						if ( intermediate_host_old_map.size() > 16 ){
+							
+							try{
+								Iterator<Object[]> it = intermediate_host_old_map.values().iterator();
+								
+								while( it.hasNext()){
+									
+									if ( now - (Long)it.next()[3] > 2*60*1000 ){
+										
+										it.remove();
+									}
+								}
+							}catch( Throwable e ){
+								
+								Debug.out( e );
+							}
+						}
+						
+						intermediate_host_old_map.put( intermediate_host, entry );
 						
 						break;
 					}
@@ -2675,11 +2715,13 @@ TorPlugin
 				synchronized( this ){
 					
 					intermediate_host_map.remove( intermediate_host );
+					
+					intermediate_host_old_map.remove( intermediate_host );
 				}
 			}
 		}else{
 			
-			Debug.out( "Proxy entry missing!" );
+			Debug.out( "Proxy entry missing for " + proxy + ", status=" + good );
 		}
 	}
 	
@@ -3927,6 +3969,15 @@ TorPlugin
 					
 					if ( entry == null ){
 						
+							// allow limited re-use of an address
+							// of use, for example, when an HTTP URL connection needs to
+							// be authenticated
+						
+						entry = intermediate_host_old_map.get( intermediate_host );
+					}
+					
+					if ( entry == null ){
+						
 						closed( this );
 						
 						throw( new IOException( "Intermediate address not found" ));
@@ -4315,10 +4366,12 @@ TorPlugin
 	private class
 	ProxyMapEntry
 	{
-		private long	created = SystemTime.getMonotonousTime();
+		private final long	created = SystemTime.getMonotonousTime();
 		
-		private	String	host;
-		private String	intermediate_host;
+		private	final String	host;
+		private final String	intermediate_host;
+		
+		private final String creator;
 		
 		private
 		ProxyMapEntry(
@@ -4327,6 +4380,15 @@ TorPlugin
 		{
 			host				= _host;
 			intermediate_host	= _intermediate_host;
+			
+			if ( Constants.isCVSVersion()){
+				
+				creator = Debug.getCompressedStackTrace();
+				
+			}else{
+				
+				creator = "Unknown";
+			}
 		}
 		
 		private long
@@ -4345,6 +4407,12 @@ TorPlugin
 		getIntermediateHost()
 		{
 			return( intermediate_host );
+		}
+		
+		private String
+		getCreator()
+		{
+			return( creator );
 		}
 	}
 }
