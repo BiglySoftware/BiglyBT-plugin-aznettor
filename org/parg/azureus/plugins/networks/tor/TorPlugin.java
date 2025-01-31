@@ -479,6 +479,36 @@ TorPlugin
 					}
 				});
 			
+						
+			final ActionParameter new_id_param = config_model.addActionParameter2( "aztorplugin.newid.text", "aztorplugin.newid.button" );
+			
+			new_id_param.addListener((p)->{
+				
+				new_id_param.setEnabled( false );
+				
+				AEThread2.createAndStartDaemon( "tor:newid", ()->{
+					
+					try{
+						
+						ControlConnection con = getConnection( 30*1000, false );
+						
+						if ( con != null ){
+								
+							try{
+								con.sendAndReceive( "SIGNAL NEWNYM" );
+								
+							}catch( Throwable e ){
+								
+								Debug.out( e );
+							}
+						}
+					}finally{
+						
+						new_id_param.setEnabled( true );
+					}
+				});
+			});
+
 			/*
 			final ActionParameter test_http_proxy_param = config_model.addActionParameter2( "", "!Do It!" );
 
@@ -765,6 +795,8 @@ TorPlugin
 						
 						test_url_param.setEnabled( plugin_enabled );
 						test_param.setEnabled( plugin_enabled );
+						
+						new_id_param.setEnabled( plugin_enabled && !external_tor );
 						
 						if ( param != null ){
 						
@@ -3524,13 +3556,13 @@ TorPlugin
 		{
 			synchronized( ControlConnection.this ){
 
-				writeLine( "GETINFO version" );
+				writeLine( "GETINFO version", true );
 				
 				String	result = "";
 				
 				while( true ){
 					
-					String reply = readLine();
+					String reply = readLine( true );
 					
 					if ( reply.startsWith( "250" )){
 						
@@ -3570,6 +3602,21 @@ TorPlugin
 		
 			throws IOException 
 		{
+			writeLine( str, false );
+		}
+		
+		private void
+		writeLine(
+			String		str,
+			boolean		boring )
+		
+			throws IOException 
+		{
+			if ( debug_server && !boring ){
+			
+				log( "Control: -> " + str );
+			}
+			
 			try{
 				os.write( ( str + "\r\n" ).getBytes(Constants.BYTE_ENCODING_CHARSET));
 			
@@ -3588,6 +3635,15 @@ TorPlugin
 		
 			throws IOException
 		{
+			return( readLine( false ));
+		}
+		
+		private String
+		readLine(
+			boolean		boring )
+		
+			throws IOException
+		{
 			String line = lnr.readLine();
 			
 			if ( line == null ){
@@ -3597,7 +3653,14 @@ TorPlugin
 				throw( new IOException( "Unexpected end of file" ));
 			}
 			
-			return( line.trim());
+			String res = line.trim();
+			
+			if ( debug_server && !boring ){
+			
+				log( "Control: <- " + res );
+			}
+			
+			return( res );
 		}
 		
 		private boolean
