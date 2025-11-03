@@ -2296,9 +2296,9 @@ TorPlugin
 			return( false );
 		}
 		
-		String	lc_host = host.toLowerCase( Locale.US );
-		
-		if ( lc_host.endsWith( ".i2p" )){
+		String host_net = AENetworkClassifier.categoriseAddress( host );
+				
+		if ( host_net == AENetworkClassifier.AT_I2P ){
 			
 			return( false );
 		}
@@ -2308,7 +2308,7 @@ TorPlugin
 			return( false );
 		}
 		
-		if ( lc_host.endsWith( ".onion" )){
+		if ( host_net == AENetworkClassifier.AT_TOR ){
 
 			return( true );	
 		}
@@ -3995,7 +3995,7 @@ TorPlugin
 					final_host	= address.getUnresolvedAddress();
 					final_port	= address.getPort();
 
-					if ( final_host.endsWith( ".i2p" )){
+					if ( AENetworkClassifier.categoriseAddress( final_host ) == AENetworkClassifier.AT_I2P ){
 						
 						if ( filtering_i2p_port == 0 ){
 							
