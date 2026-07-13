@@ -853,7 +853,18 @@ TorPlugin
 			
 			if ( Constants.isLinux ){
 				
-				arch_dir = new File( plugin_dir, Constants.is64Bit?"linux64":"linux32" );
+				String sub_dir;
+				
+				if ( Constants.is64Bit ){
+					
+					sub_dir = Constants.isArm?"linux64aarch":"linux64";
+					
+				}else{
+					
+					sub_dir = "linux32";
+				}
+				
+				arch_dir = new File( plugin_dir, sub_dir );
 				
 			}else if ( Constants.isOSX ){
 				
